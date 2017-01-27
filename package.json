@@ -10,13 +10,14 @@
   "bin": {
     "mimic": "./src/bin/mimic.js"
   },
+  "repository": "JumpTheShark/JS_MiMiC_Framework",
   "keywords": [
     "mimic",
     "mmc",
     "framework",
     "back-end"
   ],
-  "homepage": "https://github.com/JumpTheShark/JS_MiMiC_Architecture#readme",
+  "homepage": "https://github.com/JumpTheShark/JS_MiMiC_Framework#readme",
   "author": "Evgeny Savelyev",
   "license": "Apache-2.0",
   "depencencies": {},
