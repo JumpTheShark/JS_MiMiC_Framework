@@ -23,7 +23,7 @@ mimic --help
 ##### Node.js
 
 ```javascript
-const controller = require("mimic").ControlUnit;
+const controller = require("mimic-js").ControlUnit;
 
 controller.bindHeadModule("greeting", new function *() {
 	yield;
