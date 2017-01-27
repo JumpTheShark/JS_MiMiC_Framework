@@ -1,10 +1,12 @@
 # JS MiMiC Architecture & Framework
 
-<img src="https://s29.postimg.org/joz32yqmf/dungeon_and_dragons_mimic.jpg" width="330" height="268">
+<img src="https://s29.postimg.org/joz32yqmf/dungeon_and_dragons_mimic.jpg" alt="Image of Mimic from the game 'Dungeon & Dragons'" width="330" height="268">
 
-JavaScript *Module-Mediator-Controller* architecture (or *MiMiC*, *MMC*) is a way to create JS back-end programs in a specific elegant style.
+JavaScript ***Module-Mediator-Controller*** architecture (or ***MiMiC***, ***MMC***) is a way to create JS back-end programs in a specific elegant style.
 
-The architecture is inspired by the Eddie Osmani pattern.
+The architecture takes inspirations from "JavaScript Design Patterns" by [Addy Osmani](https://addyosmani.com/resources/essentialjsdesignpatterns/book/#designpatternsjavascript).
+
+***The framework is under development, but alpha-access is available now!***
 
 ### Fast start
 
@@ -37,11 +39,11 @@ controller.make("greeting", {}, () => {
 
 ### How does it work on paper?
 
-As realized by architecture name, the application is separated on three logical parts.
+As realized by architecture name, the application is divided into three logical parts.
 
-1. ***Module*** - an architectural unit, that implements the concrete task, formally named *executive task*. ***Executive task*** - string formed task that represents a description to the technical process in a behavior-driven style. These and only these units form all the technical logic part of the program. Moreover, according to the architecture, modules are the only objects that changes between different programs, so the programmer needs to use only them to create his project - another code part is crearly defined and automated.
+1. ***Module*** - an architectural unit that implements a certain task, formally named *executive task*. ***Executive task*** - a programmatic implementation of some part of business logic associated with a string-formed description. Module is the only unit in the architecture that implements business logic. Moreover, modules are the only objects that change between different applications, so the programmer needs to use only them to create his project - other parts of working application code are business-abstract and could be formalized and/or automatically generated.
 
-2. ***Mediator*** (or ***Core***) - an architectural unit, that implements an execution of tasks handled by modules. Cores can be compared with processors in a computer that manage tasks and their completion. Mediators have their own executive *business task* queue. ***Business task*** - executive task with a description based on business logic, i.e declares a complete task with a homely conception, notwithstanding the absoluteness of meaning laid between business and technical tasks. One mediator handles only one business task at the same time, but the task itself can be parallelized.
+2. ***Mediator*** (or ***Core***) - an architectural unit, that handles the execution of executive tasks by respective modules. Mediators have their own executive *business task* queue. ***Business task*** - executive task with a description based on business logic, i.e declares a complete task with a homely conception, notwithstanding the absoluteness of meaning laid between business and technical tasks. One mediator handles only one business task at the same time, but the task itself can be parallelized.
 
 3. ***Control unit*** (***CU***, or ***Controller***) - an architectural unit, that implements cores' manager system. It is also the communicator between business logic and technical implementation. The controller is only one for the project, against the potentially unlimited number of mediators and modules. As it is the input point for program users, controller accepts business tasks to handle. It consists of under-controlled core collection for executing the given tasks, the collection of business tasks it can manage and a set of executive tasks mapped onto their respective modules. All mediators share the same mapping of executive tasks and modules within one Control Unit.
 
@@ -81,7 +83,7 @@ const module1 = function *() {
 };
 ```
 
-The module above demonstrates how to implement a simple task returning "Hello, world!!" message. You can see there `const args = yield;` line - this is how the module receives the ininial arguments. Note that every module **must** request input arguments before all other outsource requests in any case, even if there is no module arguments at all. In the absence of arguments there is an option to write `yield;` instead:
+The module above demonstrates how to implement a simple task returning "Hello, world!!" message. You can see there `const args = yield;` line - this is how the module receives the ininial arguments. Note that every module **must** request input arguments before all other outsource requests in any case, even if there are no module arguments at all. In the absence of arguments there is an option to write `yield;` instead:
 
 
 ```javascript
@@ -93,7 +95,7 @@ const module1 = function *() {
 
 ##### Outsource data request 
 
-When there is a need to get something from outside the module task's logic, the request mechanism is used. As it was told, there is two ways of how to request some data based on synchronization choice.
+When there is a need to get something from outside the module task's logic, the request mechanism is used. As it was told, there are two ways of how to request some data based on synchronization choice.
 
 If we want to get the data **synchronously**:
 
@@ -146,7 +148,73 @@ Note that request is not attached to the module, but to the task. The task name 
 
 ##### Throwing errors
 
-***Coming soon***
+Of course, there are no perfect working modules, and usually a lot of time is spent on their debugging. Moreover, every module can get a corrupt argument that does not allow to operate futher.
+
+Remind the two types of errors.
+- Whether some code can not work because of an unexpected error occurs (division by zero, nonexistent variable property), such cases called ***exceptions***. These errors are from a programmer side only;
+- Whether some code can not work because of an incorrect input that is allowed to be incorrect (for instance, nonexistent url from user's input), such cases called ***emergency situations***. These errors are from a user side only.
+
+Framework offers the next way of handling errors.
+
+All errors are divided into three types:
+
+1. ***Fatal errors***, or ***First-level errors*** are errors that take place when an uncaught JavaScript error occurs within module. The business task process with all subrequest processes are shut down and callback function is called with the next structure:
+
+```javascript
+{
+	isError    : true,
+	errorLevel : 1,
+	errorBody  : ... /* e.g. new Error(...) */
+}
+```
+
+First-level errors are *exceptions*.
+
+2. ***Errors***, or ***Second-level errors*** are errors that take place when module **returns** the special error structure, meaning that its working can not be continued and the business task must be aborted. The business task process with all subrequest processes are shut down and callback function is called with the next structure:
+
+```javascript
+{
+	isError    : true,
+	errorLevel : 2,
+	errorBody  : ... /* e.g. new Error(...) */
+}
+```
+
+For example, these errors might be when in some input module receives ```null``` instead of a string that must not be ```null``` .
+To return such errors, modules must use the following structure in ```return``` statement:
+
+```javascript
+{
+	isError     : true,
+	isEmergency : false,
+	errorBody   : ... /* e.g. new Error(...) */
+}
+```
+
+Second-level errors are *exceptions*.
+
+3. ***Weak errors***, or ***Third-level errors*** are errors that take place when module **returns** the special error structure, meaning that module can not do the expected operations because of unexpected problems (get content by url that does not exist, access denied during file reading, etc.). Such errors will not abort the business task, but a JavaScript error will be thrown into upper-called tasks by using *JavaScript generators' error throw mechanism*, i.e through ```yield```. The error can be caught in try-catch block. If the last one does not happen, callback function is called with the next structure:
+
+```javascript
+{
+	isError    : true,
+	errorLevel : 3,
+	errorBody  : ... /* e.g. new Error(...) */
+}
+```
+
+Note that if any module calls a task that returns a weak error (all the same through ```yield```) and does not handle it by try-catch block, the error **becomes a first-level error** and shut down the business task execution and all dependent processes.
+To return such errors, modules must use the following structure in ```return``` statement:
+
+```javascript
+{
+	isError     : true,
+	isEmergency : true,
+	errorBody   : ... /* e.g. new Error(...) */
+}
+```
+
+Third-level errors are *emergency situations*.
 
 ##### Head module definition
 
@@ -168,12 +236,13 @@ const headModule = function *() {
 };
 ```
 
-Though it is able to implement a head module equally to any common module, there is a list of recommendations for head module implementation:
+Though it is able to implement a head module equally to any common module, here is a list of recommendations for head module implementation:
 
 * Head module consists predominantly of executive task requests among with input argument request and (optional) return value;
 * Except for requests, it is allowed to make basic calculations corresponding to the business logic of executive tasks' relation;
 * Request argument can be hardcoded, put from input or put from the result of another task;
 * Head module result can be either a constant, one of the result values, initial arguments, their basic calculation or a conjunction of previously mentioned values;
+* Head module **must** check **all** business arguments on correctness (non-null checks, type checks, etc.) and return a weak error if needed;
 * It is also allowed to handle emergency situations to return an error description.
 
 ##### Control Unit preparation
@@ -388,7 +457,7 @@ const sumSpec = function *() {
 };
 ```
 
-Although there is no restrictions of how to create testing modules, it is recommended to follow the next rules:
+Although there are no restrictions of how to create testing modules, it is recommended to follow the next rules:
 
 * For executive task shortly named \<name\> the testing module should be named \<name\>Spec;
 * Testing module does not consume arguments;
@@ -397,8 +466,38 @@ Although there is no restrictions of how to create testing modules, it is recomm
 
 ##### Hot swap technique
 
-***Coming soon***
+One of the advantages of MiMiC architecture is to swap binded modules to new ones while the application is still in work. In fact, there is no additional syntax, just rebind your task with another module:
+
+```javascript
+controller.bindModule("binded executive task", newModule);
+```
+
+or
+
+```javascript
+controller.bindHeadModule("binded business task", newHeadModule);
+```
+
+It works quite easy: every new request for execution the rebinded task will be done with a new module, but module processes whose tasks were started earlier than rebinding occured, will not be changed anyway.
 
 ##### Mining statistic
 
-***Coming soon***
+As the architecture grants an admirable control on the project, framework obtains the comprehensive statistic that is shareable with the user. Here is a list of available statistics:
+
+1. List of completed executive tasks in chronological order (total request number, task name, used modules, initial arguments, task results);
+2. List of completed executive tasks in 'most call number' sorted order (the same data);
+3. List of completed business tasks in chronological order (total request number, task names, used head modules, initial arguments, task results);
+4. List of completed business tasks in 'most call number' sorted order (the same data);
+5. List of single executive task usages in chronological order (total request number, used modules, initial arguments and task results);
+6. List of single business task usages in chronological order (total request number, used head modules, initial arguments and task results).
+
+In future releases there are as minimum seven great novations in statistic mining:
+* Task (module) execution time (total, execution time between each 'yield' call) measurement;
+* Task (module) execution memory (total, execution time between each 'yield' call) measurement;
+* Task execution date and start time;
+* Task (module) error number (an option for every completed task, whether it worked properly) with descriptions;
+* Modules' runtime relation trees. Consist of a graph (tree) for every completed task that shows modules' request hierarchy (with all needed information in nodes);
+* For every binded module, an option whether it was tested;
+* Parameterized statistic requests: user choose what data (initial arguments, results, etc.) is to be shown in returned statistic, including graphs.
+
+This instrument will allow to see tasks' 'bad locations' like congestions in time and memory leaks in order to optimize your application for the best results.
