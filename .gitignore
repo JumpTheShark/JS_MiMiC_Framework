@@ -1,0 +1,4 @@
+.directory
+.idea
+.npmignore
+node_modules

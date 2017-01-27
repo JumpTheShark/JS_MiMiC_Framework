@@ -1,0 +1,39 @@
+/****************************
+ * Business test module pattern.
+ *
+ * @author GlaDos
+ * @since 27.01.17
+ ****************************/
+
+"use strict";
+
+/***
+ * Exports.
+ *
+ * @since 27.01.17
+ */
+exports = module.exports =
+`/****************************
+ * Test module for the business task "test! $TASK".
+ *
+ * @author $AUTHOR
+ * @since $DATE
+ ****************************/
+
+"use strict";
+
+/**
+ * Module implementation.
+ */
+const testHeadModule = function *() {
+	yield;
+
+	/* TODO test module implementation */
+	
+	return true;
+};
+
+/**
+ * Exports.
+ */
+exports = module.exports = testHeadModule;`;

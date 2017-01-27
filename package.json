@@ -1,0 +1,28 @@
+{
+  "name": "mimic-js",
+  "version": "1.1.11",
+  "description": "Module-Mediator-Controller architecture and framework for JavaScript back-end applications",
+  "main": "index.js",
+  "scripts": {
+    "run": "node index.js",
+    "test": "node src/test.js"
+  },
+  "bin": {
+    "mimic": "./src/bin/mimic.js"
+  },
+  "keywords": [
+    "mimic",
+    "mmc",
+    "framework",
+    "back-end"
+  ],
+  "homepage": "https://github.com/JumpTheShark/JS_MiMiC_Architecture#readme",
+  "author": "Evgeny Savelyev",
+  "license": "Apache-2.0",
+  "depencencies": {},
+  "devDependencies": {},
+  "dependencies": {
+    "colors": "^1.1.2",
+    "shelljs": "^0.7.6"
+  }
+}
