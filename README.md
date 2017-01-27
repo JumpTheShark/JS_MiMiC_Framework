@@ -8,7 +8,7 @@ The architecture is inspired by the Eddie Osmani pattern.
 
 ### Fast start
 
-##### console
+##### Console
 
 ```bash
 npm install mimic-js -g
