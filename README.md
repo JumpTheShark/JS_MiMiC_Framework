@@ -30,7 +30,9 @@ controller.bindHeadModule("greeting", new function *() {
 	console.log("Hello, world!!");
 });
 
-controller.make("greeting", {});
+controller.make("greeting", {}, () => {
+	console.log("Callback has been called, end of testing.");
+});
 ```
 
 ### How does it work on paper?
