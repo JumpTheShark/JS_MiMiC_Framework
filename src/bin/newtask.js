@@ -37,24 +37,28 @@ ${"Description:".yellow}
 	${"<name> -b (--business) :".bold} create new head module with test head module and bind them to business task
 	${"--help                 :".bold} display this message`,
 	noCUInit =
-`No ${"CU_Init.js".red} file in the current directory. Please create it and try again.`;
+`No ${"CU_Init.js".red} file in the current directory. Please create it and try again.`,
+	corruptCUInit =
+`CU_Init.js file is corrupt to automatically bind dependencies.
+This may be caused when there is no any bindModule/bindHeadModule method calls and no comment blocks /* executive tasks */ or /* business tasks */.
+Please fix it and try again.`;
 
 /**
- * Returns a first free module name in format "<head><number><tail>.js" by the given head and tail.
- * Search is done in the current directory.
+ * Returns a first free module id by checking in format "<head><number><tail>.js".
+ * Search will be in the current directory.
  *
  * @param {string} head name head
  * @param {string} tail name tail
- * @return {string} free module name
+ * @return {number} free module id
  * @since 27.01.17
  */
-const getFreeName = (head, tail) => {
+const getFreeId = (head, tail) => {
 	let num = 0;
 
 	while (test("-e", `${head}${num}${tail}.js`))
 		num += 1;
 
-	return `${head}${num}${tail}.js`;
+	return num;
 };
 
 /* eslint-disable no-console */
@@ -115,24 +119,80 @@ exports = module.exports = (args) => {
 		return;
 	}
 
+	//** CU_Init preparation
+
+	const bindString = business ? "bindHeadModule" : "bindModule";
+
+	let
+		removeNewLine = false,
+		bindInd       = cuInit.lastIndexOf(bindString);
+
+	if (bindInd === -1) {
+		const commentString = business ? "/* business tasks */" : "/* executive tasks */";
+
+		bindInd = cuInit.indexOf(commentString);
+
+		if (bindInd === -1) {
+			console.log(corruptCUInit);
+			return;
+		}
+
+		bindInd += commentString.length + "\n\n".length;
+		removeNewLine = true;
+	} else {
+		bindInd += bindString.length;
+
+		while (cuInit.charAt(bindInd) !== ";")
+			bindInd += 1;
+
+		bindInd += "\n\n".length;
+	}
+
+	//** module creation
+
 	const templateArgs = new Map()
 		.set("AUTHOR", metaData.userName)
 		.set("DATE",   metaData.date);
 
+	let
+		freeId         = null,
+		moduleName     = null,
+		testModuleName = null;
+
 	if (business) {
+		forceCd("tests");
 		forceCd("businessTasks");
+
+		freeId = getFreeId("bModule", "Spec");
+
+		cd("../..");
+		forceCd("businessTasks");
+
+		freeId = Math.max(freeId, getFreeId("bModule", ""));
+
+		moduleName = `bModule${freeId}.js`;
 
 		extractTemplate(
 			businessModuleTemplate,
 			templateArgs.set("TASK", taskName)
-		).to(getFreeName("bModule", ""));
+		).to(moduleName);
 	} else {
+		forceCd("tests");
 		forceCd("executiveTasks");
 
-		extractTemplate(
+		freeId = getFreeId("eModule", "Spec");
+
+		cd("../..");
+		forceCd("executiveTasks");
+
+		freeId = Math.max(freeId, getFreeId("eModule", ""));
+
+		moduleName = `eModule${freeId}.js`;
+
+			extractTemplate(
 			executiveModuleTemplate,
 			templateArgs.set("TASK", taskName)
-		).to(getFreeName("eModule", ""));
+		).to(moduleName);
 	}
 
 	cd("..");
@@ -143,23 +203,41 @@ exports = module.exports = (args) => {
 		if (business) {
 			forceCd("businessTasks");
 
+			testModuleName = `bModule${freeId}Spec.js`;
+
 			extractTemplate(
 				businessTestModuleTemplate,
 				templateArgs.set("TASK", taskName)
-			).to(getFreeName("bModule", "Spec"));
+			).to(testModuleName);
 		} else {
 			forceCd("executiveTasks");
+
+			testModuleName = `eModule${freeId}Spec.js`;
 
 			extractTemplate(
 				executiveTestModuleTemplate,
 				templateArgs.set("TASK", taskName)
-			).to(getFreeName("eModule", "Spec"));
+			).to(testModuleName);
 		}
+
+		cd("../..");
 	}
 
-	cd("..");
+	//** working with CU_Init
 
-	/* TODO work with CU_Init.js */
+	const packageString = business ? "businessTasks" : "executiveTasks";
 
-	console.log(`Created successfully.`.green.bold);
+	let pasteString = `controller.${bindString}("${taskName}", require("./${packageString}/${moduleName}"));`;
+
+	if (!noTests)
+		pasteString += `\ncontroller.${bindString}("test! ${taskName}", require("./tests/${packageString}/${testModuleName}"));`;
+
+	if (!removeNewLine)
+		pasteString += "\n";
+
+	`${cuInit.substring(0, bindInd)}${pasteString}${cuInit.substring(bindInd)}`.to("CU_Init.js");
+
+	//**
+
+	console.log("Created successfully.".green.bold);
 };
