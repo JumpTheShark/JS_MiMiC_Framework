@@ -25,7 +25,9 @@ mimic --help
 ##### Node.js
 
 ```javascript
-const controller = require("mimic-js").ControlUnit;
+const Controller = require("mimic-js").ControlUnit;
+
+const controller = new Controller();
 
 controller.bindHeadModule("greeting", new function *() {
 	yield;
