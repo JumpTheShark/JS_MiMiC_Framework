@@ -29,7 +29,7 @@ const Controller = require("mimic-js").ControlUnit;
 
 const controller = new Controller();
 
-controller.bindHeadModule("greeting", new function *() {
+controller.bindHeadModule("greeting", function *() {
 	yield;
 	console.log("Hello, world!!");
 });
