@@ -97,7 +97,7 @@ function *(time) {
 	yield {
 		str     : "print hi-world with delay",
 		args    : { time : time },
-		asyncId : ""
+		asyncId : "" /* asyncId is indicator of asynchrony if no output expected, leave it empty */
 	};
 	
 	console.log("Hello, world!");
@@ -116,7 +116,7 @@ function *() {
 	yield {
 		str     : "get hello-world",
 		args    : {},
-		asyncId : "hello-world message"
+		asyncId : "hello-world message" /* gives the framework asyncId by which we can get the result later */
 	};
 	
 	const helloWorld = yield "hello-world message"; /* yield <string> means to get requested value by asyncId */
