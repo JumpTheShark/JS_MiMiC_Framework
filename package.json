@@ -15,7 +15,9 @@
     "mimic",
     "mmc",
     "framework",
-    "back-end"
+    "back-end",
+    "backend",
+    "architecture"
   ],
   "homepage": "https://github.com/JumpTheShark/JS_MiMiC_Framework#readme",
   "author": "Evgeny Savelyev",

@@ -1,20 +1,4 @@
 /****************************
- * Mediator (core) pattern.
- * Fully automated class for controlling modules and executing business tasks.
- *
- * @author GlaDos
- * @since 25.01.17
- ****************************/
-
-"use strict";
-
-/***
- * Exports.
- *
- * @since 25.01.17
- */
-exports = module.exports =
-`/****************************
  * Mediator (core).
  * Fully automated class for controlling modules and executing business tasks.
  *
@@ -243,7 +227,7 @@ class Mediator {
 			el = this.queue.headTasks[id];
 
 		if (!el)
-			throw new Error(\`corrupt element in the queue (queue length - \${this.queue.headTasks.length}, index - \${id})\`);
+			throw new Error(`corrupt element in the queue (queue length - ${this.queue.headTasks.length}, index - ${id})`);
 
 		this.queue.first += 1;
 
@@ -263,7 +247,7 @@ class Mediator {
 		const executiveModule = this.taskModuleMap[name];
 
 		if (executiveModule === undefined)
-			throw new Error(\`mediator can not handle the task "\${name}"\`);
+			throw new Error(`mediator can not handle the task "${name}"`);
 
 		const gen = executiveModule();
 
@@ -278,4 +262,4 @@ class Mediator {
  *
  * @since 10.12.16
  */
-exports = module.exports = Mediator;`;
+exports = module.exports = Mediator;

@@ -7,6 +7,8 @@
 
 "use strict";
 
+require("colors");
+
 const
 	helpMsg =
 `${"-=- help (help) -=-".bold}

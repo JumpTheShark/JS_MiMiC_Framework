@@ -13,11 +13,16 @@
  *
  * @since 24.01.17
  */
-const mimic = require("./src/bin/mimic");
+const
+	ControlUnit = require("./src/framework/ControlUnit"),
+	Mediator    = require("./src/framework/Mediator");
 
 /***
  * Exports.
  *
  * @since 24.01.17
  */
-exports = module.exports = mimic;
+exports = module.exports = {
+	ControlUnit : ControlUnit,
+	Mediator    : Mediator
+};

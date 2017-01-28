@@ -20,6 +20,7 @@ const
 	extractTemplate     = require("../tools/extractTemplate");
 
 require("shelljs/global");
+require("colors");
 
 const
 	helpMsg =

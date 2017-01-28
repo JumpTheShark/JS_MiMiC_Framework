@@ -28,6 +28,8 @@ const
 	newtask = require("./newtask"),
 	help    = require("./help");
 
+require("colors");
+
 const
 	args = process.argv,
 	argData = {
