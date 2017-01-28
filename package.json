@@ -1,6 +1,6 @@
 {
   "name": "mimic-js",
-  "version": "1.1.18",
+  "version": "1.1.19",
   "description": "Module-Mediator-Controller architecture and framework for JavaScript back-end applications",
   "main": "index.js",
   "scripts": {
