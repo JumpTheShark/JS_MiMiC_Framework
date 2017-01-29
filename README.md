@@ -25,16 +25,14 @@ mimic --help
 ##### Node.js
 
 ```javascript
-const Controller = require("mimic-js").ControlUnit;
+require("mimic-js");
 
-const controller = new Controller();
-
-controller.bindHeadModule("greeting", function *() {
+"greeting".bindHeadModule(function *() {
 	yield;
 	console.log("Hello, world!!");
 });
 
-controller.make("greeting", {}, () => {
+"greeting".make({}, () => {
 	console.log("Callback has been called, end of testing.");
 });
 ```
