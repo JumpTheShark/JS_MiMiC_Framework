@@ -27,9 +27,7 @@ exports = module.exports =
 /**
  * Imports.
  */
-const ControlUnit = require("./ControlUnit");
-
-const controller = new ControlUnit();
+const controller = require("mimic-js");
 
 /* executive tasks */
 

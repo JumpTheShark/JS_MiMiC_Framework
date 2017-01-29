@@ -44,16 +44,35 @@ const validateInput = (expectedType, writeType) =>
 	};
 
 /**
+ * Function that validates the given input variable whether it is a generator.
+ *
+ * @param {object} input data to check
+ * @return {void|error} nothing or error
+ * @since 29.01.17
+ */
+const validateGenerator = (input) => {
+	if (input === null)
+		throwValidateErr("null", "generator");
+
+	if (input === undefined)
+		throwValidateErr("undefined", "generator");
+
+	if (input.constructor.name !== "GeneratorFunction")
+		throwValidateErr(typeof input, "generator");
+};
+
+/**
  * Mapping of type-check validators { name : validator }.
  *
  * @type object
  * @since 14.12.16
  */
 const typeFunc = {
-	object      : validateInput("object",   "object"),
-	string      : validateInput("string",   "string"),
-	number      : validateInput("number",   "number"),
-	"function"  : validateInput("function", "function")
+	object     : validateInput("object", "object"),
+	string     : validateInput("string", "string"),
+	number     : validateInput("number", "number"),
+	"function" : validateInput("function", "function"),
+	generator  : validateGenerator
 };
 
 /**
@@ -98,7 +117,7 @@ class ControlUnit {
 	 * @since 14.12.16
 	 */
 	bindHeadModule (taskName, headModule) {
-		validateInputs([taskName, "string"], [headModule, "function"]);
+		validateInputs([taskName, "string"], [headModule, "generator"]);
 
 		this.businessTaskSet.add(taskName);
 		this.bindModule(taskName, headModule);
@@ -114,7 +133,7 @@ class ControlUnit {
 	 * @since 14.12.16
 	 */
 	bindModule (taskName, executiveModule) {
-		validateInputs([taskName, "string"], [executiveModule, "function"]);
+		validateInputs([taskName, "string"], [executiveModule, "generator"]);
 
 		this.taskModuleMap[taskName] = executiveModule;
 
@@ -126,12 +145,16 @@ class ControlUnit {
 	 * Executes the given task with the given arguments and callback-function.
 	 *
 	 * @param {string} taskName task in string form
-	 * @param {dictionary} args task arguments
-	 * @param {function(object)} callBack function that gets control with output data when the task is completed
+	 * @param {dictionary | null | undefined} _args task arguments
+	 * @param {function(object) | null | undefined} _callBack function that gets control with output data when the task is completed
 	 * @return {void} nothing
 	 * @since 14.12.16
 	 */
-	make (taskName, args, callBack) {
+	make (taskName, _args, _callBack) {
+		const
+			args     = _args     === undefined || _args     === null ? {}       : _args,
+			callBack = _callBack === undefined || _callBack === null ? () => {} : _callBack;
+
 		validateInputs([taskName, "string"], [args, "object"], [callBack, "function"]);
 
 		if (this.mediators.length === 0)
@@ -165,9 +188,18 @@ class ControlUnit {
 	}
 }
 
+/**
+ * Control Unit singleton.
+ * One for the project, that is why mimic-js must be a dependency for each project that uses it.
+ *
+ * @type {ControlUnit}
+ * @since 29.01.17
+ */
+const controller = new ControlUnit();
+
 /***
  * Exports.
  *
  * @since 13.12.16
  */
-exports = module.exports = ControlUnit;
+exports = module.exports = controller;

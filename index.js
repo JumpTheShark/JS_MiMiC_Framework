@@ -13,16 +13,23 @@
  *
  * @since 24.01.17
  */
-const
-	ControlUnit = require("./src/framework/ControlUnit"),
-	Mediator    = require("./src/framework/Mediator");
+const controller = require("./src/framework/ControlUnit");
+
+String.prototype.bindModule = function (module) {
+	controller.bindModule(this, module);
+};
+
+String.prototype.bindHeadModule = function (headModule) {
+	controller.bindHeadModule(this, headModule);
+};
+
+String.prototype.make = function (args, callBack) {
+	controller.make(this, args, callBack);
+};
 
 /***
  * Exports.
  *
  * @since 24.01.17
  */
-exports = module.exports = {
-	ControlUnit : ControlUnit,
-	Mediator    : Mediator
-};
+exports = module.exports = controller;

@@ -13,9 +13,8 @@
  * @since 24.01.17
  */
 const
-	controlUnitTemplate = require("../templates/ControlUnit"),
-	mediatorTemplate    = require("../templates/Mediator"),
 	controllerTemplate  = require("../templates/controller"),
+	checkMimicDep       = require("./util/checkMimicDep"),
 	getMetaData         = require("./util/getMetaData"),
 	extractTemplate     = require("../tools/extractTemplate");
 
@@ -76,21 +75,18 @@ exports = module.exports = (args) => {
 		return;
 	}
 
+	if (!checkMimicDep())
+		return;
+
 	const metaData = getMetaData();
 
 	if (metaData === null)
 		return;
 
 	"THIS IS A MARKER FOR MIMIC FRAMEWORK. DO NOT DELETE THIS FILE.".to(".mimic");
-	mkdir("framework");
 	mkdir("src");
 
-	cd("framework");
-
-	controlUnitTemplate.to("ControlUnit.js");
-	mediatorTemplate   .to("Mediator.js");
-
-	cd("../src");
+	cd("src");
 
 	const controllerTemplateArgs = new Map()
 		.set("AUTHOR", metaData.userName)

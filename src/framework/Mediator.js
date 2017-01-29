@@ -8,6 +8,13 @@
 
 "use strict";
 
+/***
+ * Imports.
+ *
+ * @since 29.01.17
+ */
+const childProcess = require("child_process");
+
 //** structure definitions
 
 /**
@@ -46,7 +53,26 @@
  * @property {number} first index of the first module that not being called for execution
  */
 
-//**
+//** process dispatching
+
+process.on("message", (data) => {
+	console.log("DEBUG: " + JSON.stringify(data));
+
+	if (typeof data.type !== "number") {
+		console.log("unexpected error");
+		return;
+	}
+
+	console.log("!!!! Called type " + data.type);
+
+	if (data.type === 0)
+		makeHeadTask(data.mediatorInstance);
+	else {
+		/* TODO */
+	}
+});
+
+//** class implementation
 
 /**
  * Mediator class implementation.
@@ -59,22 +85,20 @@
 class Mediator {
 
 	/**
-	 * Initializes new mediator by the given parent control unit.
+	 * Initializes new Mediator instance.
 	 *
-	 * @param {Controller} controller control unit's adapter
 	 * @since 12.12.16
 	 */
-	constructor (controller) {
-		this.controller    = controller;
+	constructor () {
 		this.taskModuleMap = {};
-		this.queue         = {
-			headTasks : [],
-			first     : 0
+		this.queue = {
+			headTasks: [],
+			first: 0
 		};
-		this.asyncMap      = {};
+		this.asyncMap = {};
 		this.processFreeId = 0;
-		this.isWorking     = false;
-		this.stat          = undefined; /* TODO statistic keeping with access */
+		this.isWorking = false;
+		this.stat = undefined; /* TODO statistic keeping with access */
 	}
 
 	/**
@@ -87,17 +111,7 @@ class Mediator {
 	 * @since 12.12.16
 	 */
 	pushTask (taskName, args, callBack) {
-		this.queue.headTasks.push({
-			str        : taskName,
-			args       : args,
-			callBack   : callBack
-		});
-
-		if (!this.isWorking)
-			new Promise((resolve) => {
-				this.makeHeadTask();
-				resolve();
-			}).then(() => {});
+		pushTask(this, taskName, args, callBack);
 	}
 
 	/**
@@ -109,14 +123,12 @@ class Mediator {
 	 * @since 12.12.16
 	 */
 	bind (taskName, executiveModule) {
-		this.taskModuleMap[taskName] = executiveModule;
+		bind(this, taskName, executiveModule);
 	}
 
 	getTaskNum () {
-		return this.queue.headTasks.length - this.queue.first;
+		getTaskNum(this);
 	}
-
-	//**
 
 	/**
 	 * Binds and returns new free id for a module process.
@@ -125,8 +137,7 @@ class Mediator {
 	 * @since 24.01.17
 	 */
 	bindFreeId () {
-		this.processFreeId += 1;
-		return this.processFreeId - 1;
+		bindFreeId(this);
 	}
 
 	/**
@@ -137,7 +148,7 @@ class Mediator {
 	 * @since 24.01.17
 	 */
 	getAsyncValue (key) {
-		return this.asyncMap[key];
+		getAsyncValue(this, key);
 	}
 
 	/**
@@ -149,7 +160,7 @@ class Mediator {
 	 * @since 24.01.17
 	 */
 	setAsyncValue (key, value) {
-		this.asyncMap[key] = value;
+		setAsyncValue(this, key, value);
 	}
 
 	/**
@@ -166,51 +177,7 @@ class Mediator {
 	 * @since 12.12.16
 	 */
 	processStep (firstTaskName, firstTaskModule, firstTaskArgs, processId, gen, args, callBack) {
-		const mes = gen.next(args);
-
-		if (mes.done) {
-			/*this.executedTasks.push({
-				name   : firstTaskName,
-				module : firstTaskModule,
-				args   : firstTaskArgs,
-				result : mes.value
-			}); TODO */
-
-			if (this.queue.headTasks.length > this.queue.first)
-				new Promise((resolve) => {
-					this.makeHeadTask();
-					resolve();
-				}).then(() => {});
-			else
-				this.isWorking = false;
-
-			callBack(mes.value);
-		} else if (typeof mes.value === "string") { /* <=> call for async result by the given asyncId */
-			const data = this.getAsyncValue(processId + mes.value);
-
-			if (data === undefined)
-				this.setAsyncValue(processId + mes.value, null);
-			else
-				this.processStep(firstTaskName, firstTaskModule, firstTaskArgs, processId, gen, data, callBack);
-		} else if (mes.value.asyncId) {
-			new Promise((resolve) => {
-				this.makeTask(mes.value.str, mes.value.args, (data) => {
-					const prevValue = this.getAsyncValue(processId + mes.value.asyncId);
-
-					this.setAsyncValue(processId + mes.value.asyncId, data);
-
-					if (prevValue === null)
-						this.processStep(firstTaskName, firstTaskModule, firstTaskArgs, processId, gen, data, callBack);
-				});
-
-				resolve();
-			}).then(() => {});
-
-			this.processStep(firstTaskName, firstTaskModule, firstTaskArgs, processId, gen, undefined, callBack);
-		} else
-			this.makeTask(mes.value.str, mes.value.args, (data) => {
-				this.processStep(firstTaskName, firstTaskModule, firstTaskArgs, processId, gen, data, callBack);
-			});
+		processStep(this, firstTaskName, firstTaskModule, firstTaskArgs, processId, gen, args, callBack);
 	}
 
 	/**
@@ -220,18 +187,7 @@ class Mediator {
 	 * @since 12.12.16
 	 */
 	makeHeadTask () {
-		this.isWorking = true;
-
-		const
-			id = this.queue.first,
-			el = this.queue.headTasks[id];
-
-		if (!el)
-			throw new Error(`corrupt element in the queue (queue length - ${this.queue.headTasks.length}, index - ${id})`);
-
-		this.queue.first += 1;
-
-		this.makeTask(el.str, el.args, el.callBack);
+		makeHeadTask(this);
 	}
 
 	/**
@@ -244,18 +200,128 @@ class Mediator {
 	 * @since 23.01.17
 	 */
 	makeTask (name, args, callBack) {
-		const executiveModule = this.taskModuleMap[name];
-
-		if (executiveModule === undefined)
-			throw new Error(`mediator can not handle the task "${name}"`);
-
-		const gen = executiveModule();
-
-		gen.next();
-
-		this.processStep(name, executiveModule, args, this.bindFreeId(), gen, args, callBack);
+		makeTask(this, name, args, callBack);
 	}
 }
+
+//** method implementations
+
+const pushTask = (_this, taskName, args, callBack) => {
+	_this.queue.headTasks.push({
+		str        : taskName,
+		args       : args,
+		callBack   : callBack
+	});
+
+	if (!_this.isWorking) {
+		new Promise((resolve) => {
+			makeHeadTask(_this);
+			resolve();
+		}).then(() => {});
+
+		/*const process = childProcess.fork(`${__dirname}/Mediator.js`);
+
+		process.send({
+			type             : 0,
+			mediatorInstance : _this
+		}); TODO */
+	}
+};
+
+const bind = (_this, taskName, executiveModule) => {
+	_this.taskModuleMap[taskName] = executiveModule;
+};
+
+const getTaskNum = (_this) =>
+	_this.queue.headTasks.length - _this.queue.first;
+
+const bindFreeId = (_this) => {
+	_this.processFreeId += 1;
+	return _this.processFreeId - 1;
+};
+
+const getAsyncValue = (_this, key) =>
+	_this.asyncMap[key];
+
+const setAsyncValue = (_this, key, value) => {
+	_this.asyncMap[key] = value;
+};
+
+const processStep = (_this, firstTaskName, firstTaskModule, firstTaskArgs, processId, gen, args, callBack) => {
+	const mes = gen.next(args);
+
+	if (mes.done) {
+		/*this.executedTasks.push({
+		 name   : firstTaskName,
+		 module : firstTaskModule,
+		 args   : firstTaskArgs,
+		 result : mes.value
+		 }); TODO */
+
+		if (_this.queue.headTasks.length > _this.queue.first)
+			new Promise((resolve) => {
+				makeHeadTask(_this);
+				resolve();
+			}).then(() => {});
+		else
+			this.isWorking = false;
+
+		callBack(mes.value);
+	} else if (typeof mes.value === "string") { /* <=> call for async result by the given asyncId */
+		const data = getAsyncValue(_this, processId + mes.value);
+
+		if (data === undefined)
+			setAsyncValue(_this, processId + mes.value, null);
+		else
+			processStep(_this, firstTaskName, firstTaskModule, firstTaskArgs, processId, gen, data, callBack);
+	} else if (mes.value.asyncId) {
+		new Promise((resolve) => {
+			makeTask(_this, mes.value.str, mes.value.args, (data) => {
+				const prevValue = getAsyncValue(_this, processId + mes.value.asyncId);
+
+				setAsyncValue(_this, processId + mes.value.asyncId, data);
+
+				if (prevValue === null)
+					processStep(_this, firstTaskName, firstTaskModule, firstTaskArgs, processId, gen, data, callBack);
+			});
+
+			resolve();
+		}).then(() => {});
+
+		processStep(_this, firstTaskName, firstTaskModule, firstTaskArgs, processId, gen, undefined, callBack);
+	} else
+		makeTask(_this, mes.value.str, mes.value.args, (data) => {
+			processStep(_this, firstTaskName, firstTaskModule, firstTaskArgs, processId, gen, data, callBack);
+		});
+};
+
+const makeHeadTask = (_this) => {
+	_this.isWorking = true;
+
+	const
+		id = _this.queue.first,
+		el = _this.queue.headTasks[id];
+
+	if (!el)
+		throw new Error(`corrupt element in the queue (queue length - ${_this.queue.headTasks.length}, index - ${id})`);
+
+	_this.queue.first += 1;
+
+	makeTask(_this, el.str, el.args, el.callBack);
+};
+
+const makeTask = (_this, name, args, callBack) => {
+	const executiveModule = _this.taskModuleMap[name];
+
+	if (executiveModule === undefined)
+		throw new Error(`mediator can not handle the task "${name}"`);
+
+	const gen = executiveModule();
+
+	gen.next();
+
+	processStep(_this, name, executiveModule, args, bindFreeId(_this), gen, args, callBack);
+};
 
 /***
  * Exports.
